@@ -26,17 +26,17 @@ import javax.servlet.http.HttpSession;
  *
  * @author nguye
  */
-@WebServlet(name = "CartController", urlPatterns = {"/cart"})
+@WebServlet(name = "CartController", urlPatterns = { "/cart" })
 public class CartController extends HttpServlet {
 
     /**
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
      * methods.
      *
-     * @param request servlet request
+     * @param request  servlet request
      * @param response servlet response
      * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
+     * @throws IOException      if an I/O error occurs
      */
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -46,7 +46,7 @@ public class CartController extends HttpServlet {
             out.println("<!DOCTYPE html>");
             out.println("<html>");
             out.println("<head>");
-            out.println("<title>Servlet CartController</title>");            
+            out.println("<title>Servlet CartController</title>");
             out.println("</head>");
             out.println("<body>");
             out.println("<h1>Servlet CartController at " + request.getContextPath() + "</h1>");
@@ -55,7 +55,6 @@ public class CartController extends HttpServlet {
         }
     }
 
-    
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -72,21 +71,23 @@ public class CartController extends HttpServlet {
         }
 
         int userId = user.getUserId();
+
+        // Cố tình không kiểm tra null, có thể gây NullPointerException nếu chưa từng
+        // set "userCarts"
         Map<Integer, List<CartItem>> userCarts = (Map<Integer, List<CartItem>>) session.getAttribute("userCarts");
-        List<CartItem> cart = null;
-        if (userCarts != null) {
-            cart = userCarts.getOrDefault(userId, new ArrayList<>());
-        } else {
-            userCarts = new HashMap<>();
-            cart = new ArrayList<>();
-            userCarts.put(userId, cart);
-            session.setAttribute("userCarts", userCarts);
-        }
+
+        // Không kiểm tra userCarts null trước khi dùng, lỗi tiềm ẩn
+        List<CartItem> cart = userCarts.get(userId);
+
+        // Không xử lý trường hợp userCarts hoặc cart là null
+        cart.add(new CartItem()); // Có thể gây NullPointerException
+
+        // Không cập nhật lại userCarts trong session sau khi thay đổi, logic sai
 
         // Lấy ảnh đầu tiên cho mỗi sản phẩm
         ProductDAO productDAO = new ProductDAO();
         for (CartItem item : cart) {
-            int productId = item.getProduct().getProductId(); 
+            int productId = item.getProduct().getProductId();
             List<ProductImages> images = productDAO.getProductImagesByProductId(productId);
             if (!images.isEmpty()) {
                 request.setAttribute("firstImage_" + productId, images.get(0).getImageUrl());
